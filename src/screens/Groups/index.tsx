@@ -1,27 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 
 import { FlatList } from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+
 import { GroupCard } from "@componets/GroupCard";
 import { Header } from "@componets/Header";
 import { Highlight } from "@componets/Highlight";
 import { ListEmpty } from "@componets/ListEmpty";
 
-import { Container, Title } from "./styles";
 import { Button } from "@componets/Button";
 
-interface Group {
-  id: string;
-  name: string;
-}
-export function Groups() {
-  const [groups, setGroups] = useState<Group[]>([
-    { id: "0", name: "Ignite" },
-    { id: "1", name: "Smite" },
-  ]);
+import { listGroups } from "@storage/group/groupService";
+import { Container } from "./styles";
 
-  const renderItem = ({ item }: { item: Group }) => {
-    return <GroupCard title={item.name} />;
+export function Groups() {
+  const navigation = useNavigation();
+  const [groups, setGroups] = useState<string[]>([]);
+
+  const renderItem = ({ item }: { item: string }) => {
+    return <GroupCard title={item} onPress={() => handleGroup(item)} />;
   };
+
+  const handleGroup = (groupName: string) => {
+    navigation.navigate("players", { group: groupName });
+  };
+
+  const handleNewGroup = () => {
+    navigation.navigate("newGroup");
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const data = await listGroups();
+      setGroups(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchGroups();
+    }, [])
+  );
 
   return (
     <Container>
@@ -29,7 +50,7 @@ export function Groups() {
       <Highlight title={"Turmas"} subtile={"Jogue com sua turma"} />
       <FlatList
         data={groups}
-        keyExtractor={(item, index) => item.id}
+        keyExtractor={(item, index) => index.toString()}
         renderItem={renderItem}
         contentContainerStyle={groups.length === 0 && { flex: 1 }}
         ListEmptyComponent={() => (
@@ -37,7 +58,7 @@ export function Groups() {
         )}
       />
 
-      <Button title={"Criar nova turma"} />
+      <Button title={"Criar nova turma"} onPress={handleNewGroup} />
     </Container>
   );
 }
